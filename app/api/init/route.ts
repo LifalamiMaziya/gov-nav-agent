@@ -5,15 +5,17 @@ export async function GET() {
     try {
         const session = await getBrowserSession();
 
-        if (!session.page) {
-            throw new Error('Failed to initialize browser session');
+        if (!session.sandbox) {
+            throw new Error('Failed to initialize E2B sandbox');
         }
 
-        const screenshot = await session.page.screenshot({ type: 'jpeg', quality: 50 });
+        // Get the noVNC URL (port 6080 is standard for E2B Desktop)
+        const hostname = session.sandbox.getHost(6080);
+        const viewUrl = `https://${hostname}/vnc.html?resize=scale&autoconnect=true`;
 
         return NextResponse.json({
             success: true,
-            screenshot: screenshot.toString('base64'),
+            viewUrl,
         });
     } catch (error: any) {
         console.error('Init error:', error);

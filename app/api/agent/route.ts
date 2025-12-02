@@ -54,8 +54,6 @@ export async function POST(req: NextRequest) {
                         } catch (e: any) {
                             controller.enqueue(encodeChunk('log', `Navigation timeout/error: ${e.message}. Continuing...`));
                         }
-                        const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
-                        controller.enqueue(encodeChunk('screenshot', screenshot.toString('base64')));
                         return `Navigated to ${url}`;
                     },
                 });
@@ -73,8 +71,6 @@ export async function POST(req: NextRequest) {
                         } catch (e: any) {
                             return `Failed to click ${selector}: ${e.message}`;
                         }
-                        const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
-                        controller.enqueue(encodeChunk('screenshot', screenshot.toString('base64')));
                         return `Clicked on element: ${selector}`;
                     },
                 });
@@ -93,8 +89,6 @@ export async function POST(req: NextRequest) {
                         } catch (e: any) {
                             return `Failed to type into ${selector}: ${e.message}`;
                         }
-                        const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
-                        controller.enqueue(encodeChunk('screenshot', screenshot.toString('base64')));
                         return `Typed "${text}" into ${selector}`;
                     },
                 });
@@ -108,8 +102,6 @@ export async function POST(req: NextRequest) {
                     func: async ({ amount = 500 }) => {
                         controller.enqueue(encodeChunk('log', `Scrolling down...`));
                         await page.evaluate((y: number) => window.scrollBy(0, y), amount);
-                        const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
-                        controller.enqueue(encodeChunk('screenshot', screenshot.toString('base64')));
                         return `Scrolled down ${amount}px`;
                     },
                 });
@@ -151,18 +143,7 @@ export async function POST(req: NextRequest) {
                     },
                 });
 
-                const screenshotTool = new DynamicStructuredTool({
-                    name: 'screenshot',
-                    description: 'Take a screenshot of the current page',
-                    schema: z.object({}),
-                    func: async () => {
-                        const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
-                        controller.enqueue(encodeChunk('screenshot', screenshot.toString('base64')));
-                        return `Screenshot taken`;
-                    },
-                });
-
-                return [navigateTool, clickTool, typeTool, scrollTool, waitTool, extractTextTool, screenshotTool];
+                return [navigateTool, clickTool, typeTool, scrollTool, waitTool, extractTextTool];
             };
 
             try {
@@ -173,7 +154,7 @@ export async function POST(req: NextRequest) {
                 ];
 
                 let iterations = 0;
-                const maxIterations = 15; // Increased iterations for complex tasks
+                const maxIterations = 15;
 
                 while (iterations < maxIterations) {
                     iterations++;
@@ -209,7 +190,6 @@ export async function POST(req: NextRequest) {
             } catch (error: any) {
                 controller.enqueue(encodeChunk('error', error.message));
             } finally {
-                // Do NOT close the browser session here to allow persistence
                 controller.close();
             }
         },
